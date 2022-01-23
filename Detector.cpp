@@ -6,131 +6,55 @@
 #include <QtDebug>
 #include <QtMath>
 
-Detector::Detector(const QSize &tileSize, const qreal &radius,
+#include "Direction/Direction.h"
+#include "Moravec/Moravec.h"
+#include "blur/blur.h"
+#include "utils/MatrixUtils.h"
+#include "utils/YUVUtils.h"
+
+Detector::Detector(const int &tileRadius, const qreal &radius,
                    const qreal standardDeviation)
-    : m_tileSize(tileSize), m_radius(radius),
+    : m_tileRadius(tileRadius), m_radius(radius),
       m_standardDeviation(standardDeviation) {}
 
 QImage Detector::detecting(const QImage &image) {
+  Matrix<qreal> brightness = YUV::getBrightness(image);
+
+  toImage(brightness).save("brightness.jpg");
+
+  auto blur = blur::gaussian(brightness, m_radius, m_standardDeviation);
+
+  toImage(blur).save("blur.jpg");
+
   const auto width = image.width();
   const auto height = image.height();
 
-  Matrix<qreal> brightness = getYUVBrightness(image);
+  const auto directions = Direction::all();
+  const auto directionsCount = directions.size();
 
-  matrixToImage(brightness).save("brightness.jpg");
+  QVector<qreal> probabilities(directionsCount);
 
-  auto blur = gaussianBlur(brightness, m_radius, m_standardDeviation);
+  Matrix<qreal> probability(width, Row<qreal>(height, 0));
+  Matrix<QPoint> direction(width, Row<QPoint>(height));
 
-  matrixToImage(blur).save("blur.jpg");
+  qreal minProbability;
 
-  // clang-format off
-  const QVector<QVector2D> offsets{{ 1,  0},
-                                   { 1,  1},
-                                   { 0,  1},
-                                   {-1,  1},
-                                   {-1,  0},
-                                   {-1, -1},
-                                   { 0, -1},
-                                   { 1, -1}};
-  // clang-format on
-
-  for (int i = 0; i < width; ++i) {
-    for (int j = 0; j < height; ++j) {
-      for (const auto &offset : offsets) {
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      for (int directionIndex = 0; directionIndex < directionsCount;
+           ++directionIndex) {
+        probabilities[directionIndex] = Moravec::probablity(
+            blur, x, y, Direction::toPoint(directions[directionIndex]),
+            m_tileRadius);
       }
+
+      minProbability =
+          *std::min_element(probabilities.begin(), probabilities.end());
+      probability[x][y] = minProbability;
+      direction[x][y] =
+          Direction::toPoint(directions[probabilities.indexOf(minProbability)]);
     }
   }
 
   return (QImage());
-}
-
-qreal Detector::getYUVBrightness(const QColor &color) {
-  // numbers from:
-  // https://en.wikipedia.org/wiki/Luma_(video)
-  // https://ru.wikipedia.org/wiki/%D0%9E%D1%82%D1%82%D0%B5%D0%BD%D0%BA%D0%B8_%D1%81%D0%B5%D1%80%D0%BE%D0%B3%D0%BE
-  return 0.299 * color.red() + 0.587 * color.green() + 0.114 * color.blue();
-}
-
-Matrix<qreal> Detector::getYUVBrightness(const QImage &image) {
-  const auto width = image.width();
-  const auto height = image.height();
-
-  Matrix<qreal> brightness(width, Row<qreal>(height, 0));
-
-  for (int i = 0; i < width; ++i) {
-    for (int j = 0; j < height; ++j) {
-      brightness[i][j] = getYUVBrightness(image.pixelColor(i, j));
-    }
-  }
-
-  return brightness;
-}
-
-QImage Detector::matrixToImage(const Matrix<qreal> &matrix) {
-  const auto width = matrix.size();
-  const auto height = matrix[0].size();
-
-  QImage image(width, height, QImage::Format_RGB888);
-
-  qreal brightness;
-
-  for (int i = 0; i < width; ++i) {
-    for (int j = 0; j < height; ++j) {
-      brightness = matrix[i][j];
-      image.setPixelColor(i, j, QColor(brightness, brightness, brightness));
-    }
-  }
-
-  return image;
-}
-
-static qreal GaussianFunction(const qreal &x, const qreal &y,
-                              const qreal &standardDeviation) {
-  qreal divider = 2 * standardDeviation * standardDeviation;
-
-  return qExp(-(x * x + y * y) / divider) / (2 * M_PI * divider);
-}
-
-qreal Detector::gaussianBlur(const Matrix<qreal> &matrix, const qreal &radius,
-                             const qreal &standardDeviation, const int &x,
-                             const int &y) {
-  const auto width = matrix.size();
-  const auto height = matrix[0].size();
-
-  const auto inImage = [width, height](const int &x, const int &y) {
-    return x >= 0 && x < width && y >= 0 && y < height;
-  };
-
-  qreal blur = 0;
-  qreal GaussSum = 0;
-  qreal GaussValue;
-
-  for (int i = x - radius; i <= x + radius; i++) {
-    for (int j = y - radius; j <= y + radius; ++j) {
-      if (inImage(i, j)) {
-        GaussValue = GaussianFunction(i - x, j - y, standardDeviation);
-        GaussSum += GaussValue;
-        blur += GaussValue * matrix[i][j];
-      }
-    }
-  }
-
-  return qFuzzyIsNull(GaussSum) ? 0 : blur / GaussSum;
-}
-
-Matrix<qreal> Detector::gaussianBlur(const Matrix<qreal> &matrix,
-                                     const qreal &radius,
-                                     const qreal &standardDeviation) {
-  const auto width = matrix.size();
-  const auto height = matrix[0].size();
-
-  Matrix<qreal> blurred(width, Row<qreal>(height, 0));
-
-  for (int x = 0; x < width; ++x) {
-    for (int y = 0; y < height; ++y) {
-      blurred[x][y] = gaussianBlur(matrix, radius, standardDeviation, x, y);
-    }
-  }
-
-  return blurred;
 }

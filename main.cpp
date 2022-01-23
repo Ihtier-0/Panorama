@@ -5,12 +5,11 @@
 int main(int argc, char *argv[]) {
   QCoreApplication a(argc, argv);
 
-  QImage image("habr.jpg");
+  QImage image("test.jpg");
 
-  Detector detector(QSize(3, 3), 3, 1);
+  Detector detector(3, 5, 1);
 
   detector.detecting(image);
 
-  //  return a.exec();
   return 0;
 }
