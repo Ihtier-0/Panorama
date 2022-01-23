@@ -16,8 +16,8 @@ qreal Moravec::probablity(const Matrix<qreal> &matrix, const int &row,
   qreal probablity = 0;
   qreal difference;
 
-  for (int y = row - tileRadius; y <= row + tileRadius; ++y) {
-    for (int x = col - tileRadius; x <= col + tileRadius; ++x) {
+  for (int y = col - tileRadius; y <= col + tileRadius; ++y) {
+    for (int x = row - tileRadius; x <= row + tileRadius; ++x) {
       if (onImage(x, y) && onImage(x + xOffset, y + yOffset)) {
         difference = matrix[x + xOffset][y + yOffset] - matrix[x][y];
         probablity += difference * difference;
