@@ -31,4 +31,52 @@ QVector<Direction> all() {
   return {North, NorthEast, East, SouthEast, South, SouthWest, West, NorthWest};
 }
 
+QColor toColor(const QPoint &point) {
+  if (point == QPoint{0, 1}) {
+    return QColorConstants::Black;
+  }
+  if (point == QPoint{1, 1}) {
+    return QColorConstants::White;
+  }
+  if (point == QPoint{1, 0}) {
+    return QColorConstants::Gray;
+  }
+  if (point == QPoint{1, -1}) {
+    return QColorConstants::Red;
+  }
+  if (point == QPoint{0, -1}) {
+    return QColorConstants::Green;
+  }
+  if (point == QPoint{-1, -1}) {
+    return QColorConstants::Blue;
+  }
+  if (point == QPoint{-1, 0}) {
+    return QColorConstants::Cyan;
+  }
+  if (point == QPoint{-1, 1}) {
+    return QColorConstants::Magenta;
+  }
+
+  return QColorConstants::Yellow;
+}
+
+QColor toColor(const Direction &direction) {
+  return toColor(toPoint(direction));
+}
+
+QImage toImage(const Matrix<QPoint> &matrix) {
+  const auto width = matrix.size();
+  const auto height = matrix[0].size();
+
+  QImage image(width, height, QImage::Format_RGB888);
+
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      image.setPixelColor(x, y, toColor(matrix[x][y]));
+    }
+  }
+
+  return image;
+}
+
 } // namespace Direction

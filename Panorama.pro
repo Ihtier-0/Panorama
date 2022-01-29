@@ -7,6 +7,7 @@ include(blur/blur.pri)
 include(utils/utils.pri)
 include(Direction/Direction.pri)
 include(Moravec/Moravec.pri)
+include(NonMaximalSuppression/NonMaximalSuppression.pri)
 
 SOURCES += \
         Detector.cpp \
