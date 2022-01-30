@@ -22,9 +22,9 @@ QPoint toPoint(const Direction &direction) {
     return {-1, 0};
   case Direction::NorthWest:
     return {-1, 1};
+  default:
+    return {0, 0};
   }
-
-  Q_UNREACHABLE();
 }
 
 QVector<Direction> all() {
@@ -77,6 +77,35 @@ QImage toImage(const Matrix<QPoint> &matrix) {
   }
 
   return image;
+}
+
+Direction fromPoint(const QPoint &point) {
+  if (point == QPoint{0, 1}) {
+    return Direction::North;
+  }
+  if (point == QPoint{1, 1}) {
+    return Direction::NorthEast;
+  }
+  if (point == QPoint{1, 0}) {
+    return Direction::East;
+  }
+  if (point == QPoint{1, -1}) {
+    return Direction::SouthEast;
+  }
+  if (point == QPoint{0, -1}) {
+    return Direction::South;
+  }
+  if (point == QPoint{-1, -1}) {
+    return Direction::SouthWest;
+  }
+  if (point == QPoint{-1, 0}) {
+    return Direction::West;
+  }
+  if (point == QPoint{-1, 1}) {
+    return Direction::NorthWest;
+  }
+
+  return Direction::Unknown;
 }
 
 } // namespace Direction

@@ -16,10 +16,12 @@ enum Direction {
   South,
   SouthWest,
   West,
-  NorthWest
+  NorthWest,
+  Unknown
 };
 
 QPoint toPoint(const Direction &direction);
+Direction fromPoint(const QPoint &point);
 QVector<Direction> all();
 QColor toColor(const QPoint &point);
 QColor toColor(const Direction &direction);

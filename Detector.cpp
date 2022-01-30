@@ -15,13 +15,14 @@
 #include "utils/YUVUtils.h"
 
 #define SAVE
+#define V2
 
 Detector::Detector(const int &tileRadius, const qreal &radius,
                    const qreal standardDeviation)
     : m_tileRadius(tileRadius), m_radius(radius),
       m_standardDeviation(standardDeviation) {}
 
-QImage Detector::detecting(const QImage &image) {
+QVector<Descriptor> Detector::detecting(const QImage &image) {
   QElapsedTimer timer;
 
   timer.start();
@@ -62,7 +63,12 @@ QImage Detector::detecting(const QImage &image) {
 
   timer.start();
   qDebug() << "NMS...";
-  auto nms = NMS(probability, directions);
+  QVector<Descriptor> descriptors;
+#ifdef V2
+  auto nms = NMS_v2(probability, directions, m_tileRadius, descriptors);
+#else
+  auto nms = NMS(probability, directions, m_tileRadius, descriptors);
+#endif
   toImage(nms).save("5) nms.jpg");
   qDebug() << "DONE!" << timer.elapsed() << "ms";
 
@@ -82,5 +88,5 @@ QImage Detector::detecting(const QImage &image) {
   result.save("6) result.jpg");
 #endif
   qDebug() << "DONE!" << timer.elapsed() << "ms";
-  return (QImage());
+  return descriptors;
 }

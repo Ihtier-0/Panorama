@@ -14,5 +14,6 @@ SOURCES += \
         main.cpp
 
 HEADERS += \
+  Descriptor.h \
   Detector.h \
   aliases.h

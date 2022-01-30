@@ -7,7 +7,7 @@
 
 namespace Moravec {
 
-/** return probabilitys avg
+/** return probabilities avg
  */
 qreal probablity(const Matrix<qreal> &blur, const int &tileRadius,
                  Matrix<qreal> &probability, Matrix<QPoint> &directionsMatrix);
