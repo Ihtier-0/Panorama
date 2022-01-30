@@ -16,7 +16,7 @@ Matrix<qreal> NMS(const Matrix<qreal> &probability,
   Matrix<bool> used(width, Row<bool>(height, false));
 
   QPoint direction;
-  QList<QPair<QPoint, qreal>> border;
+  QVector<QPair<QPoint, qreal>> border;
 
   int xStep;
   int yStep;
@@ -155,6 +155,8 @@ Matrix<qreal> NMS_v2(const Matrix<qreal> &probability,
 
         findZone(x, y, probability, used, tileRadius, zone);
 
+        // минимальный размер зоны - квадрат со стороной 2 * tileRadius
+        // наверное ещё нужно смотреть на форму зоны, но пока так
         if (zone.size() >= minZoneSize) {
           auto max = *std::max_element(zone.begin(), zone.end(),
                                        [](const QPair<QPoint, qreal> &left,

@@ -55,6 +55,7 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
 
   timer.start();
   qDebug() << "clipping...";
+  // нужно поэкспереметрировать с последним параметром
   Moravec::clipping(probability, directions, avg);
 #ifdef SAVE
   Direction::toImage(directions).save("4) DirectionsAfterClipping.jpg");
@@ -69,24 +70,20 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
 #else
   auto nms = NMS(probability, directions, m_tileRadius, descriptors);
 #endif
-  toImage(nms).save("5) nms.jpg");
-  qDebug() << "DONE!" << timer.elapsed() << "ms";
-
-  timer.start();
-  qDebug() << "result...";
-  QImage result = image;
-
-  for (int y = 0; y < height; ++y) {
-    for (int x = 0; x < width; ++x) {
-      if (nms[x][y] > 0) {
-        result.setPixelColor(x, y, QColorConstants::Red);
-      }
-    }
-  }
 
 #ifdef SAVE
-  result.save("6) result.jpg");
+  toImage(nms).save("5) nms.jpg");
 #endif
   qDebug() << "DONE!" << timer.elapsed() << "ms";
+
+#ifdef SAVE
+  timer.start();
+  qDebug() << "drawOverlay...";
+  QImage result = image;
+
+  drawOverlay(nms, result);
+  result.save("6) originalWithOverlay.jpg");
+  qDebug() << "DONE!" << timer.elapsed() << "ms";
+#endif
   return descriptors;
 }

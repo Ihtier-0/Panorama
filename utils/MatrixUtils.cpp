@@ -17,3 +17,16 @@ QImage toImage(const Matrix<qreal> &matrix) {
 
   return image;
 }
+
+void drawOverlay(const Matrix<qreal> &overlay, QImage &image) {
+  const auto width = image.width();
+  const auto height = image.height();
+
+  for (int y = 0; y < height; ++y) {
+    for (int x = 0; x < width; ++x) {
+      if (overlay[x][y] > 0) {
+        image.setPixelColor(x, y, QColor::fromRgb(overlay[x][y], 0, 0));
+      }
+    }
+  }
+}
