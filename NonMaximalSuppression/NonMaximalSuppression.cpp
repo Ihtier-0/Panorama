@@ -143,7 +143,7 @@ Matrix<qreal> NMS_v2(const Matrix<qreal> &probability,
 
   QVector<QPair<QPoint, qreal>> zone;
 
-  const auto diameter = 2 * tileRadius;
+  const auto diameter = 2 * tileRadius + 1;
   const auto minZoneSize = diameter * diameter;
 
   int maxX, maxY;

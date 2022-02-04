@@ -9,7 +9,8 @@ int main(int argc, char *argv[]) {
   // делается чтобы видеть результат на монохромных картинках
   image.convertTo(QImage::Format_RGB888);
 
-  Detector detector(3, 5, 1);
+  Detector detector(3, 5, 1,
+                    Detector::clippingMode::reducedEdgeMaxApproximation);
 
   detector.detecting(image);
 

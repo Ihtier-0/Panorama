@@ -2,6 +2,7 @@
 
 #include <QElapsedTimer>
 #include <QImage>
+#include <QRandomGenerator>
 #include <QVector2D>
 #include <QVector>
 #include <QtDebug>
@@ -17,10 +18,14 @@
 #define SAVE
 #define V2
 
+// число подобранно эксперементально
+// надо будет добавить возможность изменять её через gui
+constexpr int reducedConstant = 1000;
+
 Detector::Detector(const int &tileRadius, const qreal &radius,
-                   const qreal standardDeviation)
+                   const qreal standardDeviation, const clippingMode &mode)
     : m_tileRadius(tileRadius), m_radius(radius),
-      m_standardDeviation(standardDeviation) {}
+      m_standardDeviation(standardDeviation), m_mode(mode) {}
 
 QVector<Descriptor> Detector::detecting(const QImage &image) {
   QElapsedTimer timer;
@@ -47,7 +52,31 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
   const auto height = image.height();
   Matrix<qreal> probability(width, Row<qreal>(height, 0));
   Matrix<QPoint> directions(width, Row<QPoint>(height));
-  qreal avg = Moravec::probablity(blur, m_tileRadius, probability, directions);
+  qreal clippingConstant =
+      Moravec::probablity(blur, m_tileRadius, probability, directions);
+  switch (m_mode) {
+  case clippingMode::avg: {
+    break;
+  }
+  case clippingMode::halfAvg: {
+    clippingConstant /= 2;
+    break;
+  }
+  case clippingMode::edgeMaxApproximation: {
+    clippingConstant = edgeMaxApproximation();
+    break;
+  }
+  case clippingMode::reducedEdgeMaxApproximation: {
+    clippingConstant = edgeMaxApproximation() / reducedConstant;
+    break;
+  }
+  case clippingMode::randomProbability: {
+    auto random = QRandomGenerator::global();
+    clippingConstant =
+        probability[random->bounded(width)][random->bounded(height)];
+    break;
+  }
+  }
 #ifdef SAVE
   Direction::toImage(directions).save("3) MoravecDirections.jpg");
 #endif
@@ -55,8 +84,7 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
 
   timer.start();
   qDebug() << "clipping...";
-  // нужно поэкспереметрировать с последним параметром
-  Moravec::clipping(probability, directions, avg);
+  Moravec::clipping(probability, directions, clippingConstant);
 #ifdef SAVE
   Direction::toImage(directions).save("4) DirectionsAfterClipping.jpg");
 #endif
@@ -86,4 +114,16 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
   qDebug() << "DONE!" << timer.elapsed() << "ms";
 #endif
   return descriptors;
+}
+
+// максмальное возможное значение вероятности
+// если считать её только по границе в диагональном направлении
+qreal Detector::edgeMaxApproximation() {
+  const auto maxBrightness = YUV::getBrightness(QColor::fromRgb(255, 255, 255));
+  const auto squareMaxBrightness = maxBrightness * maxBrightness;
+
+  // диаметр считается по такой формуле потому что центр не входит в радиус
+  const auto diameter = 1 + 2 * m_tileRadius;
+
+  return (2 * diameter - 1) * squareMaxBrightness;
 }
