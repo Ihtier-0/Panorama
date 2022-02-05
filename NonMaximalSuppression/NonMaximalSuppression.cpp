@@ -66,8 +66,8 @@ Matrix<qreal> NMS(const Matrix<qreal> &probability,
         result[maxX][maxY] = 255;
 
         descriptors.push_back({Direction::fromPoint(directions[maxX][maxY]),
-                               probability[x][y],
-                               {x, y}});
+                               probability[maxX][maxY],
+                               {maxX, maxY}});
       }
     }
   }
@@ -169,11 +169,11 @@ Matrix<qreal> NMS_v2(const Matrix<qreal> &probability,
           // просто чтобы нормально сохранить картинку
           result[maxX][maxY] = 255;
 
-          drawSquare(max.first.x(), max.first.y(), result);
+          drawSquare(maxX, maxY, result);
 
           descriptors.push_back({Direction::fromPoint(directions[maxX][maxY]),
-                                 probability[x][y],
-                                 {x, y}});
+                                 probability[maxX][maxY],
+                                 {maxX, maxY}});
         }
       }
     }

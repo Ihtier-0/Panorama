@@ -8,12 +8,12 @@
 #include <QtDebug>
 #include <QtMath>
 
-#include "Direction/Direction.h"
-#include "Moravec/Moravec.h"
-#include "NonMaximalSuppression/NonMaximalSuppression.h"
-#include "blur/blur.h"
-#include "utils/MatrixUtils.h"
-#include "utils/YUVUtils.h"
+#include "../Direction/Direction.h"
+#include "../Moravec/Moravec.h"
+#include "../NonMaximalSuppression/NonMaximalSuppression.h"
+#include "../blur/blur.h"
+#include "../utils/MatrixUtils.h"
+#include "../utils/YUVUtils.h"
 
 #define SAVE
 #define V2
@@ -27,7 +27,7 @@ Detector::Detector(const int &tileRadius, const qreal &radius,
     : m_tileRadius(tileRadius), m_radius(radius),
       m_standardDeviation(standardDeviation), m_mode(mode) {}
 
-QVector<Descriptor> Detector::detecting(const QImage &image) {
+QVector<Descriptor> Detector::detecting(const QImage &image, QImage *result) {
   QElapsedTimer timer;
 
   timer.start();
@@ -104,15 +104,18 @@ QVector<Descriptor> Detector::detecting(const QImage &image) {
 #endif
   qDebug() << "DONE!" << timer.elapsed() << "ms";
 
-#ifdef SAVE
   timer.start();
   qDebug() << "drawOverlay...";
-  QImage result = image;
+  QImage resultSave = image;
 
-  drawOverlay(nms, result);
-  result.save("6) originalWithOverlay.jpg");
-  qDebug() << "DONE!" << timer.elapsed() << "ms";
+  drawOverlay(nms, resultSave);
+  if (result) {
+    *result = resultSave;
+  }
+#ifdef SAVE
+  resultSave.save("6) originalWithOverlay.jpg");
 #endif
+  qDebug() << "DONE!" << timer.elapsed() << "ms";
   return descriptors;
 }
 

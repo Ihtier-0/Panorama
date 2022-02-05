@@ -4,7 +4,7 @@
 #include <QImage>
 #include <QPoint>
 
-#include "Descriptor.h"
+#include "../Descriptor/Descriptor.h"
 #include "aliases.h"
 
 class Detector {
@@ -20,7 +20,7 @@ public:
   Detector(const int &tileRadius, const qreal &radius,
            const qreal standardDeviation, const clippingMode &mode);
 
-  QVector<Descriptor> detecting(const QImage &image);
+  QVector<Descriptor> detecting(const QImage &image, QImage *result = nullptr);
 
 private:
   qreal edgeMaxApproximation();

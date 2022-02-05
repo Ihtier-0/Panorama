@@ -9,4 +9,6 @@ struct Descriptor {
   QPoint position;
 };
 
+QDebug operator<<(QDebug out, const Descriptor &descriptor);
+
 #endif // DESCRIPTOR_H

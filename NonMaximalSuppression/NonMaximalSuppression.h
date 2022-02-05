@@ -3,7 +3,7 @@
 
 #include <QImage>
 
-#include "../Descriptor.h"
+#include "../Descriptor/Descriptor.h"
 #include "../aliases.h"
 
 /** return overlay

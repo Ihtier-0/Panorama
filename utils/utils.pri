@@ -10,3 +10,9 @@ SOURCES += \
     $$PWD/MatrixUtils.cpp \
     $$PWD/YUVUtils.cpp
 }
+
+HEADERS += \
+  $$PWD/utils.h
+
+SOURCES += \
+  $$PWD/utils.cpp

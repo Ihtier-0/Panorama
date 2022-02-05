@@ -8,12 +8,13 @@ include(utils/utils.pri)
 include(Direction/Direction.pri)
 include(Moravec/Moravec.pri)
 include(NonMaximalSuppression/NonMaximalSuppression.pri)
+include(Descriptor/Descriptor.pri)
+include(Detector/Detector.pri)
 
 SOURCES += \
-        Detector.cpp \
+        ImageCombiner.cpp \
         main.cpp
 
 HEADERS += \
-  Descriptor.h \
-  Detector.h \
+  ImageCombiner.h \
   aliases.h
