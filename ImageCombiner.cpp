@@ -65,7 +65,7 @@ static qreal associationsLoss(const QVector<QPair<int, int>> &associations,
 
   for (const auto &association : associations) {
     difference =
-        QVector2D(transform.map(leftСorners[association.first].position) -
+        QVector2D(leftСorners[association.first].position -
                   transform.map(rightСorners[association.second].position))
             .length();
     loss += difference * difference;
@@ -116,5 +116,36 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
 
   bothImage.save("20) bothAssociations.jpg");
 
-  QTransform transform;
+//  const auto loss = [associations, leftСorners,
+//                     rightСorners](const QTransform &transform) {
+//    return associationsLoss(associations, leftСorners, rightСorners, transform);
+//  };
+
+//  QTransform transform;
+//  QTransform gradient;
+
+//  qDebug() << transform << loss(transform);
+
+//  for (int i = 0; i < 10; ++i) {
+//    qDebug() << i;
+//    gradient = solveGradient(loss, transform);
+//    gradient += -1;
+//    transform = transform + gradient;
+//  }
+
+//  qDebug() << transform << loss(transform);
+
+//  // to rewrite
+//  {
+//    QImage bothImage(leftWidht + rightWidht, qMax(leftHeight, rightHeight),
+//                     QImage::Format_RGB888);
+//    bothImage.fill(QColorConstants::Yellow);
+
+//    QPainter painter(&bothImage);
+//    painter.drawImage(0, 0, leftResult);
+//    const auto point = transform.map(QPoint(leftWidht, 0));
+//    qDebug() << point;
+//    painter.drawImage(point.x(), point.y(), rightResult);
+//    bothImage.save("30).jpg");
+//  }
 }

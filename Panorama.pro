@@ -1,15 +1,17 @@
-QT += gui
+QT += gui testlib
 
 CONFIG += c++11 console
 CONFIG -= app_bundle
 
 include(blur/blur.pri)
 include(utils/utils.pri)
+include(testUtils/testUtils.pri)
 include(Direction/Direction.pri)
 include(Moravec/Moravec.pri)
 include(NonMaximalSuppression/NonMaximalSuppression.pri)
 include(Descriptor/Descriptor.pri)
 include(Detector/Detector.pri)
+include(Optimization/Optimization.pri)
 
 SOURCES += \
         ImageCombiner.cpp \

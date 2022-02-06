@@ -1,8 +1,11 @@
 #include <QCoreApplication>
 
 #include "ImageCombiner.h"
+#include "testUtils/testUtils.h"
 
 int main(int argc, char *argv[]) {
+  startTests(argc, argv);
+
   QCoreApplication a(argc, argv);
 
   QImage right("right.jpg");
