@@ -1,6 +1,7 @@
 #include "utils.h"
 
 #include <QRandomGenerator>
+#include <QtMath>
 
 QColor randomColor() {
   const auto random = QRandomGenerator::global();
@@ -8,18 +9,45 @@ QColor randomColor() {
                 random->bounded(256));
 }
 
-QTransform operator+(const QTransform &left, const QTransform &right) {
-  // clang-format off
-  return QTransform(left.m11() + right.m11(),
-                    left.m12() + right.m12(),
-                    left.m13() + right.m13(),
+QVector<qreal> multiply(const qreal &number, const QVector<qreal> &vector) {
+  const auto size = vector.size();
 
-                    left.m21() + right.m21(),
-                    left.m22() + right.m22(),
-                    left.m23() + right.m23(),
+  QVector<qreal> result(size);
 
-                    left.m31() + right.m31(),
-                    left.m32() + right.m32(),
-                    left.m33() + right.m33());
-  // clang-format on
+  for (int i = 0; i < size; ++i) {
+    result[i] = vector[i] * number;
+  }
+
+  return result;
+}
+
+QVector<qreal> multiply(const QVector<qreal> &vector, const qreal &number) {
+  return multiply(number, vector);
+}
+
+QVector<qreal> sum(const QVector<qreal> &left, const QVector<qreal> &right) {
+  const auto leftSize = left.size();
+  const auto rightSize = right.size();
+
+  const auto minSize = qMin(leftSize, rightSize);
+
+  QVector<qreal> result(minSize);
+
+  for (int i = 0; i < minSize; ++i) {
+    result[i] = left[i] + right[i];
+  }
+
+  return result;
+}
+
+qreal norm(const QVector<qreal> &vector) {
+  const auto size = vector.size();
+
+  qreal result = 0;
+
+  for (int i = 0; i < size; ++i) {
+    result += vector[i] * vector[i];
+  }
+
+  return result;
 }

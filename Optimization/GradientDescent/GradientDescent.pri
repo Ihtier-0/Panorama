@@ -3,15 +3,10 @@
 CONFIG += GRADIENTDESCENT_PRI
 
 HEADERS += \
-    $$PWD/GradientDescent.h
+    $$PWD/GradientDescent.h \
+    $$PWD/GradientDescentTests.h
 
 SOURCES += \
-    $$PWD/GradientDescent.cpp
+    $$PWD/GradientDescent.cpp \
+    $$PWD/GradientDescentTests.cpp
 }
-
-HEADERS += \
-  $$PWD/tests.h
-
-SOURCES += \
-  $$PWD/tests.cpp
-

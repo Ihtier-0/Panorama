@@ -6,6 +6,8 @@
 #include <QVector2D>
 
 #include "Detector/Detector.h"
+#include "Optimization/GradientDescent/GradientDescent.h"
+#include "Optimization/SteepestDescentMethod/SteepestDescentMethod.h"
 #include "utils/utils.h"
 
 static QVector<QPair<int, int>>
@@ -65,8 +67,9 @@ static qreal associationsLoss(const QVector<QPair<int, int>> &associations,
 
   for (const auto &association : associations) {
     difference =
-        QVector2D(leftСorners[association.first].position -
-                  transform.map(rightСorners[association.second].position))
+        QVector2D(
+            QPointF(leftСorners[association.first].position) -
+            transform.map(QPointF(rightСorners[association.second].position)))
             .length();
     loss += difference * difference;
   }
@@ -116,36 +119,21 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
 
   bothImage.save("20) bothAssociations.jpg");
 
-//  const auto loss = [associations, leftСorners,
-//                     rightСorners](const QTransform &transform) {
-//    return associationsLoss(associations, leftСorners, rightСorners, transform);
-//  };
+  const auto loss = [associations, leftСorners,
+                     rightСorners](const QVector<qreal> &vector) {
+    auto transform = QTransform(vector[0], vector[1], vector[2], vector[3],
+                                vector[4], vector[5]);
 
-//  QTransform transform;
-//  QTransform gradient;
+    return associationsLoss(associations, leftСorners, rightСorners,
+                            transform) +
+           norm(vector);
+  };
 
-//  qDebug() << transform << loss(transform);
+  QVector<qreal> transform = {1, 0, 0, 1, 0, 0};
 
-//  for (int i = 0; i < 10; ++i) {
-//    qDebug() << i;
-//    gradient = solveGradient(loss, transform);
-//    gradient += -1;
-//    transform = transform + gradient;
-//  }
+  const auto optimization =
+      Optimization::SteepestDescentMethod(loss, transform);
 
-//  qDebug() << transform << loss(transform);
-
-//  // to rewrite
-//  {
-//    QImage bothImage(leftWidht + rightWidht, qMax(leftHeight, rightHeight),
-//                     QImage::Format_RGB888);
-//    bothImage.fill(QColorConstants::Yellow);
-
-//    QPainter painter(&bothImage);
-//    painter.drawImage(0, 0, leftResult);
-//    const auto point = transform.map(QPoint(leftWidht, 0));
-//    qDebug() << point;
-//    painter.drawImage(point.x(), point.y(), rightResult);
-//    bothImage.save("30).jpg");
-//  }
+  qDebug() << transform << loss(transform);
+  qDebug() << optimization << loss(optimization);
 }

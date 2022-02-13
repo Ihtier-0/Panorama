@@ -1,6 +1,6 @@
 QT += gui testlib
 
-CONFIG += c++11 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 
 include(blur/blur.pri)

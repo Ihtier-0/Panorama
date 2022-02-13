@@ -3,13 +3,13 @@
 
 #include "../../testUtils/testUtils.h"
 
-class tests : public QObject {
+class SteepestDescentMethodTests : public QObject {
   Q_OBJECT
 
 private slots:
-  void test0();
+  void SteepestDescentMethodTest1();
 };
 
-DECLARE_TEST(tests)
+DECLARE_TEST(SteepestDescentMethodTests)
 
 #endif // TESTS_H
