@@ -1,5 +1,7 @@
 #include "NonMaximalSuppression.h"
 
+#include <QQueue>
+
 Matrix<qreal> NMS(const Matrix<qreal> &probability,
                   const Matrix<QPoint> &directions, const int &tileRadius,
                   QVector<Descriptor> &descriptors) {
@@ -86,12 +88,24 @@ static void findZone(const int &row, const int &col,
     return x >= 0 && y >= 0 && x < width && y < height;
   };
 
-  for (int y = col - tileRadius; y <= col + tileRadius; ++y) {
-    for (int x = row - tileRadius; x <= row + tileRadius; ++x) {
-      if (onImage(x, y) && !used[x][y] && probability[x][y] > 0) {
-        used[x][y] = true;
-        zone.push_back({{x, y}, probability[x][y]});
-        findZone(x, y, probability, used, tileRadius, zone);
+  QQueue<QPoint> points;
+  QPoint point;
+  points.push_back({row, col});
+
+  int xPos, yPos;
+
+  while (!points.isEmpty()) {
+    point = points.front();
+    points.pop_front();
+    xPos = point.x();
+    yPos = point.y();
+    for (int y = yPos - tileRadius; y <= col + tileRadius; ++y) {
+      for (int x = xPos - tileRadius; x <= row + tileRadius; ++x) {
+        if (onImage(x, y) && !used[x][y] && probability[x][y] > 0) {
+          used[x][y] = true;
+          zone.push_back({{x, y}, probability[x][y]});
+          points.push_back({x, y});
+        }
       }
     }
   }

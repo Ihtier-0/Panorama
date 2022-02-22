@@ -86,6 +86,7 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
 
   const auto rightСorners = detector.detecting(right, &rightResult);
   const auto leftСorners = detector.detecting(left, &leftResult);
+  qDebug() << "end";
 
   const auto leftWidht = left.width();
   const auto rightWidht = right.width();
@@ -119,21 +120,39 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
 
   bothImage.save("20) bothAssociations.jpg");
 
-  const auto loss = [associations, leftСorners,
-                     rightСorners](const QVector<qreal> &vector) {
-    auto transform = QTransform(vector[0], vector[1], vector[2], vector[3],
-                                vector[4], vector[5]);
+  const auto best = bestPair(associations, leftСorners, rightСorners);
+  const auto move = rightСorners[associations[best].second].position -
+                    leftСorners[associations[best].first].position;
 
-    return associationsLoss(associations, leftСorners, rightСorners,
-                            transform) +
-           norm(vector);
-  };
+  QImage initialApproximation(leftWidht + rightWidht,
+                              qMax(leftHeight, rightHeight),
+                              QImage::Format_RGB888);
+  QPainter painter2(&initialApproximation);
+  painter2.drawImage(0, 0, leftResult);
+  painter2.drawImage(leftWidht + move.x(), 0 + move.y(), rightResult);
+  initialApproximation.save("30) initialApproximation.jpg");
+}
 
-  QVector<qreal> transform = {1, 0, 0, 1, 0, 0};
+int ImageCombiner::bestPair(const QVector<QPair<int, int>> &associations,
+                            const QVector<Descriptor> &leftСorners,
+                            const QVector<Descriptor> &rightСorners) {
+  int best = 0;
+  qreal bestProbability =
+      qAbs(leftСorners[associations[best].first].probability -
+           rightСorners[associations[best].second].probability);
+  qreal currentProbability;
 
-  const auto optimization =
-      Optimization::SteepestDescentMethod(loss, transform);
+  const auto size = associations.size();
 
-  qDebug() << transform << loss(transform);
-  qDebug() << optimization << loss(optimization);
+  for (int i = 0; i < size; ++i) {
+    if (bestProbability >
+        (currentProbability =
+             qAbs(leftСorners[associations[i].first].probability -
+                  rightСorners[associations[i].second].probability))) {
+      bestProbability = currentProbability;
+      best = i;
+    }
+  }
+
+  return best;
 }
