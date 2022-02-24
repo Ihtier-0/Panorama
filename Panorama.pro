@@ -12,6 +12,7 @@ include(NonMaximalSuppression/NonMaximalSuppression.pri)
 include(Descriptor/Descriptor.pri)
 include(Detector/Detector.pri)
 include(Optimization/Optimization.pri)
+include(FAST/FAST.pri)
 
 SOURCES += \
         ImageCombiner.cpp \
