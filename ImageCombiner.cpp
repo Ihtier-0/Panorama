@@ -11,12 +11,12 @@
 #include "utils/utils.h"
 
 static QVector<QPair<int, int>>
-findAssociations(const QVector<Descriptor> &leftСorners,
-                 const QVector<Descriptor> &rightСorners) {
+findAssociations(const QVector<Descriptor> &leftCorners,
+                 const QVector<Descriptor> &rightCorners) {
   QVector<QPair<int, int>> associations;
 
-  const auto rightСornersCount = rightСorners.size();
-  const auto leftCornersCount = leftСorners.size();
+  const auto rightCornersCount = rightCorners.size();
+  const auto leftCornersCount = leftCorners.size();
 
   int closestCorner;
   qreal minDistance;
@@ -27,11 +27,11 @@ findAssociations(const QVector<Descriptor> &leftСorners,
   // то и в обратном цикле они вряд-ли соединятся
   for (int left = 0; left < leftCornersCount; ++left) {
     closestCorner = 0;
-    minDistance = qAbs(leftСorners[left].probability -
-                       rightСorners[closestCorner].probability);
-    for (int right = 0; right < rightСornersCount; ++right) {
-      if (minDistance > (distance = qAbs(leftСorners[left].probability -
-                                         rightСorners[right].probability))) {
+    minDistance = qAbs(leftCorners[left].probability -
+                       rightCorners[closestCorner].probability);
+    for (int right = 0; right < rightCornersCount; ++right) {
+      if (minDistance > (distance = qAbs(leftCorners[left].probability -
+                                         rightCorners[right].probability))) {
         closestCorner = right;
         minDistance = distance;
       }
@@ -43,10 +43,10 @@ findAssociations(const QVector<Descriptor> &leftСorners,
                      });
 
     if (existed != associations.end()) {
-      if (qAbs(leftСorners[left].probability -
-               rightСorners[closestCorner].probability) <
-          qAbs(leftСorners[existed->first].probability -
-               rightСorners[closestCorner].probability)) {
+      if (qAbs(leftCorners[left].probability -
+               rightCorners[closestCorner].probability) <
+          qAbs(leftCorners[existed->first].probability -
+               rightCorners[closestCorner].probability)) {
         associations.erase(existed);
         associations.push_back({left, closestCorner});
       }
@@ -59,8 +59,8 @@ findAssociations(const QVector<Descriptor> &leftСorners,
 }
 
 static qreal associationsLoss(const QVector<QPair<int, int>> &associations,
-                              const QVector<Descriptor> &leftСorners,
-                              const QVector<Descriptor> &rightСorners,
+                              const QVector<Descriptor> &leftCorners,
+                              const QVector<Descriptor> &rightCorners,
                               const QTransform &transform) {
   qreal loss = 0;
   qreal difference;
@@ -68,8 +68,8 @@ static qreal associationsLoss(const QVector<QPair<int, int>> &associations,
   for (const auto &association : associations) {
     difference =
         QVector2D(
-            QPointF(leftСorners[association.first].position) -
-            transform.map(QPointF(rightСorners[association.second].position)))
+            QPointF(leftCorners[association.first].position) -
+            transform.map(QPointF(rightCorners[association.second].position)))
             .length();
     loss += difference * difference;
   }
@@ -84,8 +84,8 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
   QImage rightResult;
   QImage leftResult;
 
-  const auto rightСorners = detector.detecting(right, &rightResult);
-  const auto leftСorners = detector.detecting(left, &leftResult);
+  const auto rightCorners = detector.detecting(right, &rightResult);
+  const auto leftCorners = detector.detecting(left, &leftResult);
   qDebug() << "end";
 
   const auto leftWidht = left.width();
@@ -105,7 +105,7 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
   bothImage.save("10) bothResult.jpg");
 
   QVector<QPair<int, int>> associations =
-      findAssociations(leftСorners, rightСorners);
+      findAssociations(leftCorners, rightCorners);
 
   const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
     return {point.x() + leftWidht, point.y()};
@@ -114,15 +114,15 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
   for (const auto &association : associations) {
     painter.setPen(randomColor());
     painter.drawLine(
-        leftСorners[association.first].position,
-        rightToBothCoord(rightСorners[association.second].position));
+        leftCorners[association.first].position,
+        rightToBothCoord(rightCorners[association.second].position));
   }
 
   bothImage.save("20) bothAssociations.jpg");
 
-  const auto best = bestPair(associations, leftСorners, rightСorners);
-  const auto move = rightСorners[associations[best].second].position -
-                    leftСorners[associations[best].first].position;
+  const auto best = bestPair(associations, leftCorners, rightCorners);
+  const auto move = rightCorners[associations[best].second].position -
+                    leftCorners[associations[best].first].position;
 
   QImage initialApproximation(leftWidht + rightWidht,
                               qMax(leftHeight, rightHeight),
@@ -134,12 +134,12 @@ void ImageCombiner::combine(const QImage &left, const QImage &right) {
 }
 
 int ImageCombiner::bestPair(const QVector<QPair<int, int>> &associations,
-                            const QVector<Descriptor> &leftСorners,
-                            const QVector<Descriptor> &rightСorners) {
+                            const QVector<Descriptor> &leftCorners,
+                            const QVector<Descriptor> &rightCorners) {
   int best = 0;
   qreal bestProbability =
-      qAbs(leftСorners[associations[best].first].probability -
-           rightСorners[associations[best].second].probability);
+      qAbs(leftCorners[associations[best].first].probability -
+           rightCorners[associations[best].second].probability);
   qreal currentProbability;
 
   const auto size = associations.size();
@@ -147,8 +147,8 @@ int ImageCombiner::bestPair(const QVector<QPair<int, int>> &associations,
   for (int i = 0; i < size; ++i) {
     if (bestProbability >
         (currentProbability =
-             qAbs(leftСorners[associations[i].first].probability -
-                  rightСorners[associations[i].second].probability))) {
+             qAbs(leftCorners[associations[i].first].probability -
+                  rightCorners[associations[i].second].probability))) {
       bestProbability = currentProbability;
       best = i;
     }

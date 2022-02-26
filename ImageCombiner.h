@@ -9,8 +9,8 @@ public:
   static void combine(const QImage &left, const QImage &right);
 
   static int bestPair(const QVector<QPair<int, int>> &associations,
-                      const QVector<Descriptor> &leftСorners,
-                      const QVector<Descriptor> &rightСorners);
+                      const QVector<Descriptor> &leftCorners,
+                      const QVector<Descriptor> &rightCorners);
 };
 
 #endif // IMAGECOMBINER_H
