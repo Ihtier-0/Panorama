@@ -11,8 +11,8 @@ QVector<QVector2D> FAST(const Matrix<qreal> &brightness, const qreal &t,
 
   QVector<QVector2D> features;
 
-  for (int y = 0 + radius; y < height - radius; ++y) {
-    for (int x = 0 + radius; x < width - radius; ++x) {
+  for (int y = 0 + 15; y < height - 15; ++y) {
+    for (int x = 0 + 15; x < width - 15; ++x) {
       currentBrightness = brightness[x][y];
       if (currentBrightness > brightness[x + radius][y] + t &&
           currentBrightness > brightness[x - radius][y] + t &&
