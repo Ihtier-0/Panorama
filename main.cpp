@@ -17,10 +17,11 @@ int main(int argc, char *argv[]) {
 
   QCoreApplication a(argc, argv);
 
-  QImage left("left.jpg");
-  QImage right("right.jpg");
+  QImage left("hotel-01.png");
+  QImage right("hotel-00.png");
   QVector<QVector2D> leftFast, rightFast;
   Matrix<qreal> leftBlur, rightBlur;
+  qreal fastT = 20;
 
   {
     QElapsedTimer timer;
@@ -40,7 +41,7 @@ int main(int argc, char *argv[]) {
 
     timer.start();
     qDebug() << "FAST...";
-    leftFast = FAST(leftBlur, 20);
+    leftFast = FAST(leftBlur, fastT);
     qDebug() << "DONE!" << timer.elapsed() << "ms";
 
     const auto width = left.width();
@@ -75,7 +76,7 @@ int main(int argc, char *argv[]) {
 
     timer.start();
     qDebug() << "FAST...";
-    rightFast = FAST(rightBlur, 20);
+    rightFast = FAST(rightBlur, fastT);
     qDebug() << "DONE!" << timer.elapsed() << "ms";
 
     const auto width = right.width();

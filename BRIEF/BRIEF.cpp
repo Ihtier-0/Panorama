@@ -66,7 +66,7 @@ QVector<QPair<int, int>> findSimilar(const QVector<QBitArray> &leftBRIEF,
 
     if (existed != similar.end()) {
       if (minDistance <
-          (leftBRIEF[left] ^ rightBRIEF[existed->first]).count(true)) {
+          (leftBRIEF[left] ^ rightBRIEF[existed->second]).count(true)) {
         similar.erase(existed);
         similar.push_back({left, closestCorner});
       }
