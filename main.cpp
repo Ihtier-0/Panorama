@@ -7,6 +7,7 @@
 
 #include "BRIEF/BRIEF.h"
 #include "FAST/FAST.h"
+#include "RANSAC/RANSAC.h"
 #include "blur/blur.h"
 #include "utils/MatrixUtils.h"
 #include "utils/YUVUtils.h"
@@ -17,8 +18,8 @@ int main(int argc, char *argv[]) {
 
   QCoreApplication a(argc, argv);
 
-  QImage left("hotel-01.png");
-  QImage right("hotel-00.png");
+  QImage left("rio-00.png");
+  QImage right("rio-01.png");
   QVector<QVector2D> leftFast, rightFast;
   Matrix<qreal> leftBlur, rightBlur;
   qreal fastT = 20;
@@ -136,6 +137,36 @@ int main(int argc, char *argv[]) {
   }
 
   bothImage.save("bothImage.jpg");
+
+  QVector<QPair<int, int>> bestSimilar;
+  timer.start();
+  qDebug() << "RANSAC...";
+  {
+    bestSimilar = RANSAC(similar, leftBRIEF, rightBRIEF, similar.size() * 0.1,
+                         2 * similar.size());
+
+    QImage bothImage(leftWidht + rightWidht, qMax(leftHeight, rightHeight),
+                     QImage::Format_RGB888);
+    bothImage.fill(QColorConstants::Yellow);
+
+    QPainter painter(&bothImage);
+    painter.drawImage(0, 0, left);
+    painter.drawImage(leftWidht, 0, right);
+
+    const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
+      return {point.x() + leftWidht, point.y()};
+    };
+
+    for (const auto &s : bestSimilar) {
+      painter.setPen(randomColor());
+      painter.drawLine(QPoint(leftFast[s.first].x(), leftFast[s.first].y()),
+                       rightToBothCoord(QPoint(rightFast[s.second].x(),
+                                               rightFast[s.second].y())));
+    }
+
+    bothImage.save("bestSimilarBothImage.jpg");
+  }
+  qDebug() << "DONE!" << timer.elapsed() << "ms";
 
   //  QImage right("right.jpg");
   //  QImage left("left.jpg");

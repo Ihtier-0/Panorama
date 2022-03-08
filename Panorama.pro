@@ -14,6 +14,7 @@ include(Detector/Detector.pri)
 include(Optimization/Optimization.pri)
 include(FAST/FAST.pri)
 include(BRIEF/BRIEF.pri)
+include(RANSAC/RANSAC.pri)
 
 SOURCES += \
         ImageCombiner.cpp \
