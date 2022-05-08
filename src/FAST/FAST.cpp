@@ -1,6 +1,8 @@
 #include "FAST.h"
 
-QVector<QVector2D> FAST(const Matrix<qreal> &brightness, const qreal &t,
+// -----------------------------------------------------------------------------
+
+QVector<QVector2D> FAST(const Matrix<float> &brightness, const float &t,
                         const SupportedRadius &supportedRadius) {
   const auto width = brightness.size();
   const auto height = brightness[0].size();
@@ -50,12 +52,15 @@ QVector<QVector2D> FAST(const Matrix<qreal> &brightness, const qreal &t,
   return features;
 }
 
-int SupportedRadiusToInt(const SupportedRadius &radius) {
-  switch (radius) {
+// -----------------------------------------------------------------------------
+
+int SupportedRadiusToInt(const SupportedRadius &aRadius) {
+  switch (aRadius) {
   case SupportedRadius::three: {
     return 3;
   }
   }
-
-  return 0;
+  Q_UNREACHABLE();
 }
+
+// -----------------------------------------------------------------------------

@@ -1,19 +1,26 @@
-QT += gui testlib
+QT      += core gui widgets
 
-CONFIG += c++17 console
-CONFIG -= app_bundle
+CONFIG  += c++17 console
+CONFIG  -= app_bundle
 
-include(utils/utils.pri)
-include(testUtils/testUtils.pri)
-
-include(blur/blur.pri)
-include(FAST/FAST.pri)
-include(BRIEF/BRIEF.pri)
-include(RANSAC/RANSAC.pri)
-include(Combine/Combine.pri)
+INCLUDEPATH += src/
 
 SOURCES += \
-        main.cpp
+        src/main.cpp \
+        src/MainWindow.cpp \
+        src/blur/blur.cpp \
+        src/BRIEF/BRIEF.cpp \
+        src/FAST/FAST.cpp \
+        src/RANSAC/RANSAC.cpp \
+        src/Combine/Combine.cpp \
+        src/utils/utils.cpp
 
 HEADERS += \
-  aliases.h
+        src/MainWindow.h \
+        src/aliases.h \
+        src/blur/blur.h \
+        src/BRIEF/BRIEF.h \
+        src/FAST/FAST.h \
+        src/RANSAC/RANSAC.h \
+        src/Combine/Combine.h \
+        src/utils/utils.h

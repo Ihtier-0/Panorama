@@ -7,10 +7,10 @@
 
 QVector<QPair<QPoint, QPoint>> BRIEFSequence();
 
-QBitArray BRIEF(const Matrix<qreal> &brightness, const int &x, const int &y,
+QBitArray BRIEF(const Matrix<float> &aBrightness, const int &aX, const int &aY,
                 const QVector<QPair<QPoint, QPoint>> &BRIEFSequence);
 
-QVector<QPair<int, int>> findSimilar(const QVector<QBitArray> &left,
-                                     const QVector<QBitArray> &right);
+QVector<QPair<int, int>> findSimilar(const QVector<QBitArray> &aLeft,
+                                     const QVector<QBitArray> &aRight);
 
 #endif // BRIEF_H

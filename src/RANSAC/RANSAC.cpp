@@ -3,6 +3,8 @@
 #include <QRandomGenerator>
 #include <QVector>
 
+// -----------------------------------------------------------------------------
+
 QVector<QPair<int, int>> RANSAC(const QVector<QPair<int, int>> &similar,
                                 const QVector<QBitArray> &leftBRIEF,
                                 const QVector<QBitArray> &rightBRIEF,
@@ -14,28 +16,29 @@ QVector<QPair<int, int>> RANSAC(const QVector<QPair<int, int>> &similar,
     return QRandomGenerator::global()->bounded(size);
   };
 
-  const auto randomElements = [&]() {
-    QVector<QPair<int, int>> result;
+  const auto randomIndexes = [&]() {
+    QVector<int> indexes;
     for (quint32 i = 0; i < resultCount; ++i) {
-      result.push_back(similar[randomIndex()]);
+      indexes.push_back(randomIndex());
     }
-    return result;
+    return indexes;
   };
 
-  const auto solveQuality = [&](const QVector<QPair<int, int>> &step) {
+  const auto solveQuality = [&](const QVector<int> &step) {
     int quality = 0;
+    QPair<int, int> pair;
     for (const auto &element : step) {
-      quality +=
-          (leftBRIEF[element.first] ^ rightBRIEF[element.second]).count(false);
+      pair = similar[element];
+      quality += (leftBRIEF[pair.first] ^ rightBRIEF[pair.second]).count(false);
     }
     return quality;
   };
 
-  QVector<QPair<int, int>> step, best = randomElements();
+  QVector<int> step, best = randomIndexes();
   int currentQuality, bestQuality = solveQuality(best);
 
   for (quint32 i = 0; i < iteration - 1; ++i) {
-    step = randomElements();
+    step = randomIndexes();
     currentQuality = solveQuality(step);
     if (currentQuality > bestQuality) {
       best = step;
@@ -43,23 +46,13 @@ QVector<QPair<int, int>> RANSAC(const QVector<QPair<int, int>> &similar,
     }
   }
 
-  // с одной стророны так метод возвращает не то количество,
-  // с другой точность куда лучше
-  // пусть пока так
-  int avg = solveQuality(best) / resultCount;
+  QVector<QPair<int, int>> bestPairs;
 
-  QVector<int> toDelete;
-
-  for (quint32 i = 0; i < resultCount; ++i) {
-    if ((leftBRIEF[best[i].first] ^ rightBRIEF[best[i].second]).count(false) <
-        avg) {
-      toDelete.push_back(i);
-    }
+  for (const auto &b : best) {
+    bestPairs.push_back(similar[b]);
   }
 
-  for (quint32 i = 0; i < toDelete.size(); ++i) {
-    best.remove(toDelete[i] - i);
-  }
-
-  return best;
+  return bestPairs;
 }
+
+// -----------------------------------------------------------------------------
