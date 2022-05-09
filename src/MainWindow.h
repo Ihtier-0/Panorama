@@ -20,7 +20,18 @@ public:
   float getStandardDeviation() const;
   void setStandardDeviation(float newStandardDeviation);
 
+private slots:
+  void recommendationChanged(const QString &text);
+  void thresholdChanged(double d);
+  void standardDeviationChanged(double d);
+  void debugChanged(int state);
+  void resultCountChanged(double d);
+  void iterationChanged(double d);
+  void avgFiltherChanged(int state);
+
 private:
+  void createLayout();
+
   using briefInfo = QVector<QBitArray>;
   using fastInfo = QVector<QVector2D>;
   QPair<fastInfo, briefInfo> beforeCombine(const QImage &image,
@@ -37,6 +48,7 @@ private:
   bool mDebug = true;
   quint32 mResultCount = 15;
   quint32 mIteration = 1000;
+  bool mAvgFilther = true;
 
   QImage mLeft;
   QImage mRight;

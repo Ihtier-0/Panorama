@@ -1,8 +1,14 @@
 #include "MainWindow.h"
 
+#include <QCheckBox>
+#include <QComboBox>
 #include <QDebug>
+#include <QDoubleSpinBox>
 #include <QElapsedTimer>
+#include <QHBoxLayout>
+#include <QLabel>
 #include <QPainter>
+#include <QVBoxLayout>
 
 #include "BRIEF/BRIEF.h"
 #include "FAST/FAST.h"
@@ -12,52 +18,59 @@
 // -----------------------------------------------------------------------------
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  if (!mLeft.load("rio-00.png")) {
-    qDebug() << "can't load left image";
-  }
-  if (!mRight.load("rio-01.png")) {
-    qDebug() << "can't load right image";
-  }
-  mLeft.convertTo(QImage::Format_RGB888);
-  mRight.convertTo(QImage::Format_RGB888);
+  //  if (!mLeft.load("rio-00.png")) {
+  //    qDebug() << "can't load left image";
+  //  }
+  //  if (!mRight.load("rio-01.png")) {
+  //    qDebug() << "can't load right image";
+  //  }
+  //  mLeft.convertTo(QImage::Format_RGB888);
+  //  mRight.convertTo(QImage::Format_RGB888);
 
-  mBRIEFSequence = BRIEFSequence();
+  //  mBRIEFSequence = BRIEFSequence();
 
-  auto left = beforeCombine(mLeft, "left");
-  qDebug();
-  auto right = beforeCombine(mRight, "right");
-  qDebug();
+  //  auto left = beforeCombine(mLeft, "left");
+  //  qDebug();
+  //  auto right = beforeCombine(mRight, "right");
+  //  qDebug();
 
-  auto similar = findSimilar(left, right);
+  //  auto similar = findSimilar(left, right);
 
-  auto bestSimilar = avgFilter(left.second, right.second, similar);
-  if (mDebug) {
-    const auto leftWidht = mLeft.width();
-    const auto rightWidht = mRight.width();
+  //  if (mAvgFilther) {
+  //    similar = avgFilter(left.second, right.second, similar);
+  //    if (mDebug) {
+  //      const auto leftWidht = mLeft.width();
+  //      const auto rightWidht = mRight.width();
 
-    const auto leftHeight = mLeft.height();
-    const auto rightHeight = mRight.height();
+  //      const auto leftHeight = mLeft.height();
+  //      const auto rightHeight = mRight.height();
 
-    const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
-      return {point.x() + leftWidht, point.y()};
-    };
-    QImage bothImage(leftWidht + rightWidht, qMax(leftHeight, rightHeight),
-                     QImage::Format_RGB888);
-    bothImage.fill(QColorConstants::Yellow);
+  //      const auto rightToBothCoord = [leftWidht](const QPoint &point) ->
+  //      QPoint {
+  //        return {point.x() + leftWidht, point.y()};
+  //      };
+  //      QImage bothImage(leftWidht + rightWidht, qMax(leftHeight,
+  //      rightHeight),
+  //                       QImage::Format_RGB888);
+  //      bothImage.fill(QColorConstants::Yellow);
 
-    QPainter painter(&bothImage);
-    painter.drawImage(0, 0, mLeft);
-    painter.drawImage(leftWidht, 0, mRight);
+  //      QPainter painter(&bothImage);
+  //      painter.drawImage(0, 0, mLeft);
+  //      painter.drawImage(leftWidht, 0, mRight);
 
-    for (const auto &s : bestSimilar) {
-      painter.setPen(randomColor());
-      painter.drawLine(QPoint(left.first[s.first].x(), left.first[s.first].y()),
-                       rightToBothCoord(QPoint(right.first[s.second].x(),
-                                               right.first[s.second].y())));
-    }
+  //      for (const auto &s : similar) {
+  //        painter.setPen(randomColor());
+  //        painter.drawLine(
+  //            QPoint(left.first[s.first].x(), left.first[s.first].y()),
+  //            rightToBothCoord(
+  //                QPoint(right.first[s.second].x(),
+  //                right.first[s.second].y())));
+  //      }
 
-    bothImage.save("avg filter similar.jpg");
-  }
+  //      bothImage.save("avg filter similar.jpg");
+  //    }
+  //  }
+  this->createLayout();
 }
 
 // -----------------------------------------------------------------------------
@@ -233,6 +246,54 @@ void MainWindow::setStandardDeviation(float newStandardDeviation) {
 
 // -----------------------------------------------------------------------------
 
+void MainWindow::recommendationChanged(const QString &text) {
+  qDebug() << "recommendationChanged" << text;
+  if (text == "BT601") {
+    qDebug() << "\tBT601";
+    mRecommendation = YUV::Recommendation::BT601;
+  } else if (text == "BT709") {
+    qDebug() << "\tBT709";
+    mRecommendation = YUV::Recommendation::BT709;
+  } else if (text == "BT2020") {
+    qDebug() << "\tBT2020";
+    mRecommendation = YUV::Recommendation::BT2020;
+  } else {
+    qDebug() << "\tunknown";
+  }
+}
+
+void MainWindow::thresholdChanged(double d) {
+  qDebug() << "thresholdChanged" << d;
+  mThreshold = d;
+}
+
+void MainWindow::standardDeviationChanged(double d) {
+  qDebug() << "standardDeviationChanged" << d;
+  mStandardDeviation = d;
+}
+
+void MainWindow::debugChanged(int state) {
+  qDebug() << "debugChanged" << state;
+  mDebug = Qt::Checked == state;
+}
+
+void MainWindow::resultCountChanged(double d) {
+  qDebug() << "resultCountChanged" << d;
+  mResultCount = d;
+}
+
+void MainWindow::iterationChanged(double d) {
+  qDebug() << "iterationChanged" << d;
+  mIteration = d;
+}
+
+void MainWindow::avgFiltherChanged(int state) {
+  qDebug() << "avgFiltherChanged" << state;
+  mAvgFilther = Qt::Checked == state;
+}
+
+// -----------------------------------------------------------------------------
+
 bool MainWindow::getDebug() const { return mDebug; }
 
 void MainWindow::setDebug(bool newDebug) { mDebug = newDebug; }
@@ -245,6 +306,146 @@ YUV::Recommendation MainWindow::getRecommendation() const {
 
 void MainWindow::setRecommendation(YUV::Recommendation newRecommendation) {
   mRecommendation = newRecommendation;
+}
+
+// -----------------------------------------------------------------------------
+
+void MainWindow::createLayout() {
+  auto widget = new QWidget;
+
+  auto main = new QHBoxLayout;
+  {
+    auto firstImageVBox = new QVBoxLayout;
+    { firstImageVBox->addWidget(new QLabel("first image")); }
+    main->addLayout(firstImageVBox);
+
+    auto secondImageVBox = new QVBoxLayout;
+    { secondImageVBox->addWidget(new QLabel("second image")); }
+    main->addLayout(secondImageVBox);
+
+    auto buttons = new QVBoxLayout;
+    {
+      auto recommendationsHBox = new QHBoxLayout;
+      {
+        auto recommendations = new QComboBox;
+        {
+          recommendations->addItem("BT601");
+          recommendations->addItem("BT709");
+          recommendations->addItem("BT2020");
+          recommendations->setCurrentIndex((int)mRecommendation);
+          connect(recommendations, &QComboBox::currentTextChanged, this,
+                  &MainWindow::recommendationChanged);
+        }
+        recommendationsHBox->addWidget(new QLabel("recommendation:"));
+        recommendationsHBox->addWidget(recommendations);
+      }
+      buttons->addLayout(recommendationsHBox);
+
+      auto standardDeviationHBox = new QHBoxLayout;
+      {
+        auto standardDeviationSpin = new QDoubleSpinBox;
+        {
+          standardDeviationSpin->setValue(mStandardDeviation);
+          standardDeviationSpin->setSingleStep(0.01);
+          standardDeviationSpin->setMinimum(0.01);
+          standardDeviationSpin->setMaximum(std::numeric_limits<double>::max());
+          connect(standardDeviationSpin, &QDoubleSpinBox::valueChanged, this,
+                  &MainWindow::standardDeviationChanged);
+        }
+        standardDeviationHBox->addWidget(new QLabel("standardDeviation:"));
+        standardDeviationHBox->addWidget(standardDeviationSpin);
+      }
+      buttons->addLayout(standardDeviationHBox);
+
+      auto thresholdHBox = new QHBoxLayout;
+      {
+        auto thresholdSpin = new QDoubleSpinBox;
+        {
+          thresholdSpin->setValue(mThreshold);
+          thresholdSpin->setSingleStep(0.01);
+          thresholdSpin->setMinimum(0);
+          thresholdSpin->setMaximum(std::numeric_limits<double>::max());
+          connect(thresholdSpin, &QDoubleSpinBox::valueChanged, this,
+                  &MainWindow::thresholdChanged);
+        }
+        thresholdHBox->addWidget(new QLabel("threshold:"));
+        thresholdHBox->addWidget(thresholdSpin);
+      }
+      buttons->addLayout(thresholdHBox);
+
+      auto debugHBox = new QHBoxLayout;
+      {
+        auto debugBox = new QCheckBox;
+        {
+          if (mDebug) {
+            debugBox->setCheckState(Qt::CheckState::Checked);
+          } else {
+            debugBox->setCheckState(Qt::CheckState::Unchecked);
+          }
+          connect(debugBox, &QCheckBox::stateChanged, this,
+                  &MainWindow::debugChanged);
+        }
+        debugHBox->addWidget(new QLabel("debug:"));
+        debugHBox->addWidget(debugBox);
+      }
+      buttons->addLayout(debugHBox);
+
+      auto resultCountHBox = new QHBoxLayout;
+      {
+        auto resultCountSpin = new QDoubleSpinBox;
+        {
+          resultCountSpin->setDecimals(0);
+          resultCountSpin->setSingleStep(1);
+          resultCountSpin->setMinimum(1);
+          resultCountSpin->setValue(mResultCount);
+          resultCountSpin->setMaximum(std::numeric_limits<double>::max());
+          connect(resultCountSpin, &QDoubleSpinBox::valueChanged, this,
+                  &MainWindow::resultCountChanged);
+        }
+        resultCountHBox->addWidget(new QLabel("RANSAC resultCount:"));
+        resultCountHBox->addWidget(resultCountSpin);
+      }
+      buttons->addLayout(resultCountHBox);
+
+      auto iterationHBox = new QHBoxLayout;
+      {
+        auto iterationSpin = new QDoubleSpinBox;
+        {
+          iterationSpin->setDecimals(0);
+          iterationSpin->setSingleStep(1);
+          iterationSpin->setMinimum(1);
+          iterationSpin->setValue(mIteration);
+          iterationSpin->setMaximum(std::numeric_limits<double>::max());
+          connect(iterationSpin, &QDoubleSpinBox::valueChanged, this,
+                  &MainWindow::resultCountChanged);
+        }
+        iterationHBox->addWidget(new QLabel("RANSAC iteration:"));
+        iterationHBox->addWidget(iterationSpin);
+      }
+      buttons->addLayout(iterationHBox);
+
+      auto avgHBox = new QHBoxLayout;
+      {
+        auto avgBox = new QCheckBox;
+        {
+          if (mAvgFilther) {
+            avgBox->setCheckState(Qt::CheckState::Checked);
+          } else {
+            avgBox->setCheckState(Qt::CheckState::Unchecked);
+          }
+          connect(avgBox, &QCheckBox::stateChanged, this,
+                  &MainWindow::avgFiltherChanged);
+        }
+        avgHBox->addWidget(new QLabel("avgFilther:"));
+        avgHBox->addWidget(avgBox);
+      }
+      buttons->addLayout(avgHBox);
+    }
+    main->addLayout(buttons);
+  }
+  widget->setLayout(main);
+
+  this->setCentralWidget(widget);
 }
 
 // -----------------------------------------------------------------------------
