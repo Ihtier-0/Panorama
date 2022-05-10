@@ -1,8 +1,25 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include "utils/utils.h"
+#include <QLabel>
 #include <QMainWindow>
+
+#include "utils/utils.h"
+
+class AspectRatioLabel : public QLabel {
+  Q_OBJECT
+public:
+  explicit AspectRatioLabel(QWidget *parent = 0);
+  virtual int heightForWidth(int width) const;
+  virtual QSize sizeHint() const;
+  QPixmap scaledPixmap() const;
+public slots:
+  void setPixmap(const QPixmap &);
+  void resizeEvent(QResizeEvent *);
+
+private:
+  QPixmap pix;
+};
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -28,9 +45,15 @@ private slots:
   void resultCountChanged(double d);
   void iterationChanged(double d);
   void avgFiltherChanged(int state);
+  void openLeft();
+  void openRight();
+  void combine();
+  void clearImages();
+  void saveResult();
 
 private:
   void createLayout();
+  bool openImage(QImage &image);
 
   using briefInfo = QVector<QBitArray>;
   using fastInfo = QVector<QVector2D>;
@@ -51,7 +74,13 @@ private:
   bool mAvgFilther = true;
 
   QImage mLeft;
+  AspectRatioLabel *mLeftImg;
   QImage mRight;
+  AspectRatioLabel *mRightImg;
+
+  QImage mCombine;
+  AspectRatioLabel *mCombineImg;
+  QWidget *mCombineWidget = new QWidget;
 
   QVector<QPair<QPoint, QPoint>> mBRIEFSequence;
 };

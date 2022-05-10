@@ -1,75 +1,62 @@
 #include "MainWindow.h"
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
 #include <QDebug>
 #include <QDoubleSpinBox>
 #include <QElapsedTimer>
+#include <QFileDialog>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPainter>
+#include <QPixmap>
+#include <QPushButton>
+#include <QResizeEvent>
 #include <QVBoxLayout>
 
 #include "BRIEF/BRIEF.h"
+#include "Combine/Combine.h"
 #include "FAST/FAST.h"
 #include "RANSAC/RANSAC.h"
 #include "blur/blur.h"
 
+AspectRatioLabel::AspectRatioLabel(QWidget *parent) : QLabel(parent) {
+  this->setMinimumSize(1, 1);
+  setScaledContents(false);
+}
+
+void AspectRatioLabel::setPixmap(const QPixmap &p) {
+  pix = p;
+  QLabel::setPixmap(p.isNull() ? pix : scaledPixmap());
+}
+
+int AspectRatioLabel::heightForWidth(int width) const {
+  return pix.isNull() ? this->height()
+                      : ((qreal)pix.height() * width) / pix.width();
+}
+
+QSize AspectRatioLabel::sizeHint() const {
+  int w = this->width();
+  return QSize(w, heightForWidth(w));
+}
+
+QPixmap AspectRatioLabel::scaledPixmap() const {
+  return pix.scaled(this->size(), Qt::KeepAspectRatio,
+                    Qt::SmoothTransformation);
+}
+
+void AspectRatioLabel::resizeEvent(QResizeEvent *e) {
+  if (!pix.isNull()) {
+    QLabel::setPixmap(scaledPixmap());
+  }
+  QLabel::resizeEvent(e);
+}
+
 // -----------------------------------------------------------------------------
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  //  if (!mLeft.load("rio-00.png")) {
-  //    qDebug() << "can't load left image";
-  //  }
-  //  if (!mRight.load("rio-01.png")) {
-  //    qDebug() << "can't load right image";
-  //  }
-  //  mLeft.convertTo(QImage::Format_RGB888);
-  //  mRight.convertTo(QImage::Format_RGB888);
-
-  //  mBRIEFSequence = BRIEFSequence();
-
-  //  auto left = beforeCombine(mLeft, "left");
-  //  qDebug();
-  //  auto right = beforeCombine(mRight, "right");
-  //  qDebug();
-
-  //  auto similar = findSimilar(left, right);
-
-  //  if (mAvgFilther) {
-  //    similar = avgFilter(left.second, right.second, similar);
-  //    if (mDebug) {
-  //      const auto leftWidht = mLeft.width();
-  //      const auto rightWidht = mRight.width();
-
-  //      const auto leftHeight = mLeft.height();
-  //      const auto rightHeight = mRight.height();
-
-  //      const auto rightToBothCoord = [leftWidht](const QPoint &point) ->
-  //      QPoint {
-  //        return {point.x() + leftWidht, point.y()};
-  //      };
-  //      QImage bothImage(leftWidht + rightWidht, qMax(leftHeight,
-  //      rightHeight),
-  //                       QImage::Format_RGB888);
-  //      bothImage.fill(QColorConstants::Yellow);
-
-  //      QPainter painter(&bothImage);
-  //      painter.drawImage(0, 0, mLeft);
-  //      painter.drawImage(leftWidht, 0, mRight);
-
-  //      for (const auto &s : similar) {
-  //        painter.setPen(randomColor());
-  //        painter.drawLine(
-  //            QPoint(left.first[s.first].x(), left.first[s.first].y()),
-  //            rightToBothCoord(
-  //                QPoint(right.first[s.second].x(),
-  //                right.first[s.second].y())));
-  //      }
-
-  //      bothImage.save("avg filter similar.jpg");
-  //    }
-  //  }
   this->createLayout();
 }
 
@@ -294,6 +281,143 @@ void MainWindow::avgFiltherChanged(int state) {
 
 // -----------------------------------------------------------------------------
 
+void MainWindow::openLeft() {
+  if (!openImage(mLeft)) {
+    return;
+  }
+  qDebug() << "openLeft";
+
+  mLeftImg->setPixmap(QPixmap::fromImage(mLeft));
+}
+
+void MainWindow::openRight() {
+  if (!openImage(mRight)) {
+    return;
+  }
+  qDebug() << "openRight";
+
+  mRightImg->setPixmap(QPixmap::fromImage(mRight));
+}
+
+// -----------------------------------------------------------------------------
+
+void MainWindow::combine() {
+  if (mLeft.isNull()) {
+    QMessageBox::warning(this, "Warning!", "Open left image before combine");
+    return;
+  }
+  if (mRight.isNull()) {
+    QMessageBox::warning(this, "Warning!", "Open right image before combine");
+    return;
+  }
+
+  qDebug() << "combine";
+
+  const auto leftWidht = mLeft.width();
+  const auto rightWidht = mRight.width();
+
+  const auto leftHeight = mLeft.height();
+  const auto rightHeight = mRight.height();
+
+  const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
+    return {point.x() + leftWidht, point.y()};
+  };
+
+  mLeft.convertTo(QImage::Format_RGB888);
+  mRight.convertTo(QImage::Format_RGB888);
+
+  mBRIEFSequence = BRIEFSequence();
+
+  auto left = beforeCombine(mLeft, "left");
+  qDebug();
+  auto right = beforeCombine(mRight, "right");
+  qDebug();
+
+  auto similar = findSimilar(left, right);
+
+  if (mAvgFilther) {
+    similar = avgFilter(left.second, right.second, similar);
+
+    if (mDebug) {
+      QImage bothImage(leftWidht + rightWidht, qMax(leftHeight, rightHeight),
+                       QImage::Format_RGB888);
+      bothImage.fill(QColorConstants::Yellow);
+
+      QPainter painter(&bothImage);
+      painter.drawImage(0, 0, mLeft);
+      painter.drawImage(leftWidht, 0, mRight);
+
+      for (const auto &s : similar) {
+        painter.setPen(randomColor());
+        painter.drawLine(
+            QPoint(left.first[s.first].x(), left.first[s.first].y()),
+            rightToBothCoord(
+                QPoint(right.first[s.second].x(), right.first[s.second].y())));
+      }
+
+      bothImage.save("avg filter similar.jpg");
+    }
+  }
+
+  const auto initial =
+      initialApproximation(left.first, right.first, left.second, right.second,
+                           similar, rightToBothCoord);
+
+  mCombine = QImage(leftWidht + rightWidht - qAbs(initial.x()),
+                    qMax(leftHeight, rightHeight) + qAbs(initial.y()),
+                    QImage::Format_RGB888);
+  mCombine.fill(QColorConstants::Yellow);
+  QPainter painter(&mCombine);
+  painter.drawImage(0, qAbs(initial.y()), mLeft);
+  painter.drawImage(rightToBothCoord({0, 0}).x() + initial.x(),
+                    rightToBothCoord({0, 0}).y() + initial.y(), mRight);
+
+  if (mDebug) {
+    mCombine.save("initialApproximation.jpg");
+  }
+
+  mCombineImg->setPixmap(QPixmap::fromImage(mCombine));
+
+  mCombineWidget->show();
+}
+
+// -----------------------------------------------------------------------------
+
+void MainWindow::clearImages() {
+  qDebug() << "clearImages";
+
+  mLeftImg->setPixmap(QPixmap::fromImage(QImage()));
+  mLeftImg->setText("left image");
+  mRightImg->setPixmap(QPixmap::fromImage(QImage()));
+  mRightImg->setText("right image");
+
+  mLeft = QImage();
+  mRight = QImage();
+}
+
+// -----------------------------------------------------------------------------
+
+void MainWindow::saveResult() {
+  QString fileName = QFileDialog::getSaveFileName(
+      this, tr("Save File"), "/home/jana/untitled.png",
+      tr("Images (*.png *.xpm *.bmp *.jpg *.jpeg)"));
+
+  if (fileName.isEmpty()) {
+    return;
+  }
+
+  if (mCombine.isNull()) {
+    qDebug() << "mCombine null";
+    return;
+  }
+
+  qDebug() << "saveResult";
+
+  mCombine.save(fileName);
+}
+
+// -----------------------------------------------------------------------------
+
 bool MainWindow::getDebug() const { return mDebug; }
 
 void MainWindow::setDebug(bool newDebug) { mDebug = newDebug; }
@@ -315,13 +439,52 @@ void MainWindow::createLayout() {
 
   auto main = new QHBoxLayout;
   {
-    auto firstImageVBox = new QVBoxLayout;
-    { firstImageVBox->addWidget(new QLabel("first image")); }
-    main->addLayout(firstImageVBox);
+    auto leftImageVBox = new QVBoxLayout;
+    {
+      auto openLeftButton = new QPushButton("open left");
+      {
+        connect(openLeftButton, &QPushButton::pressed, this,
+                &MainWindow::openLeft);
+      }
+      leftImageVBox->addWidget(openLeftButton);
 
-    auto secondImageVBox = new QVBoxLayout;
-    { secondImageVBox->addWidget(new QLabel("second image")); }
-    main->addLayout(secondImageVBox);
+      mLeftImg = new AspectRatioLabel;
+      mLeftImg->setText("left image");
+      mLeftImg->setAlignment(Qt::AlignCenter);
+      leftImageVBox->addWidget(mLeftImg);
+
+      auto combineButton = new QPushButton("combine");
+      {
+        connect(combineButton, &QPushButton::pressed, this,
+                &MainWindow::combine);
+      }
+
+      leftImageVBox->addWidget(combineButton);
+    }
+    main->addLayout(leftImageVBox, 1);
+
+    auto rightImageVBox = new QVBoxLayout;
+    {
+      auto openRightButton = new QPushButton("open right");
+      {
+        connect(openRightButton, &QPushButton::pressed, this,
+                &MainWindow::openRight);
+      }
+      rightImageVBox->addWidget(openRightButton);
+
+      mRightImg = new AspectRatioLabel;
+      mRightImg->setText("right image");
+      mRightImg->setAlignment(Qt::AlignCenter);
+      rightImageVBox->addWidget(mRightImg);
+
+      auto clearButton = new QPushButton("clear");
+      {
+        connect(clearButton, &QPushButton::pressed, this,
+                &MainWindow::clearImages);
+      }
+      rightImageVBox->addWidget(clearButton);
+    }
+    main->addLayout(rightImageVBox, 1);
 
     auto buttons = new QVBoxLayout;
     {
@@ -441,11 +604,60 @@ void MainWindow::createLayout() {
       }
       buttons->addLayout(avgHBox);
     }
-    main->addLayout(buttons);
+    main->addLayout(buttons, 0);
   }
   widget->setLayout(main);
 
   this->setCentralWidget(widget);
+
+  this->setStyleSheet("*"
+                      "{"
+                      "  background-color: rgb(40, 36, 44);"
+                      "  color: white;"
+                      "}");
+
+  auto mainCombine = new QVBoxLayout;
+  {
+    mCombineImg = new AspectRatioLabel;
+    mCombineImg->setAlignment(Qt::AlignCenter);
+    mainCombine->addWidget(mCombineImg, Qt::AlignCenter);
+
+    auto saveButton = new QPushButton("save");
+    {
+      connect(saveButton, &QPushButton::clicked, this, &MainWindow::saveResult);
+    }
+    mainCombine->addWidget(saveButton);
+  }
+  mCombineWidget->setLayout(mainCombine);
+
+  mCombineWidget->setParent(this, Qt::Window);
+
+  mCombineWidget->setStyleSheet("*"
+                                "{"
+                                "  background-color: rgb(40, 36, 44);"
+                                "  color: white;"
+                                "}");
+  mCombineWidget->setMinimumSize(300, 300);
+  mCombineWidget->hide();
+}
+
+// -----------------------------------------------------------------------------
+
+bool MainWindow::openImage(QImage &image) {
+  QString fileName = QFileDialog::getOpenFileName(
+      this, tr("Open Image"), "/home",
+      tr("Images (*.png *.xpm *.bmp *.jpg *.jpeg)"));
+
+  if (fileName.isEmpty()) {
+    return false;
+  }
+
+  if (!image.load(fileName)) {
+    qDebug() << "can't open file";
+    return false;
+  }
+
+  return true;
 }
 
 // -----------------------------------------------------------------------------
