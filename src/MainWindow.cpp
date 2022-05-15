@@ -313,16 +313,6 @@ void MainWindow::combine() {
 
   qDebug() << "combine";
 
-  const auto leftWidht = mLeft.width();
-  const auto rightWidht = mRight.width();
-
-  const auto leftHeight = mLeft.height();
-  const auto rightHeight = mRight.height();
-
-  const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
-    return {point.x() + leftWidht, point.y()};
-  };
-
   mLeft.convertTo(QImage::Format_RGB888);
   mRight.convertTo(QImage::Format_RGB888);
 
@@ -332,6 +322,16 @@ void MainWindow::combine() {
   qDebug();
   auto right = beforeCombine(mRight, "right");
   qDebug();
+
+  const auto leftWidht = mLeft.width();
+  const auto rightWidht = mRight.width();
+
+  const auto leftHeight = mLeft.height();
+  const auto rightHeight = mRight.height();
+
+  const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
+    return {point.x() + leftWidht, point.y()};
+  };
 
   auto similar = findSimilar(left, right);
 
@@ -620,6 +620,7 @@ void MainWindow::createLayout() {
   {
     mCombineImg = new AspectRatioLabel;
     mCombineImg->setAlignment(Qt::AlignCenter);
+    mCombineImg->setText("combine");
     mainCombine->addWidget(mCombineImg, Qt::AlignCenter);
 
     auto saveButton = new QPushButton("save");
