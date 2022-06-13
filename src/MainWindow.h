@@ -4,6 +4,7 @@
 #include <QLabel>
 #include <QMainWindow>
 
+#include "Combine/Combine.h"
 #include "utils/utils.h"
 
 class AspectRatioLabel : public QLabel {
@@ -37,6 +38,9 @@ public:
   float getStandardDeviation() const;
   void setStandardDeviation(float newStandardDeviation);
 
+  Loss getLoss() const;
+  void setLoss(Loss newLoss);
+
 private slots:
   void recommendationChanged(const QString &text);
   void thresholdChanged(double d);
@@ -45,6 +49,7 @@ private slots:
   void resultCountChanged(double d);
   void iterationChanged(double d);
   void avgFiltherChanged(int state);
+  void lossChanged(const QString &text);
   void openLeft();
   void openRight();
   void combine();
@@ -64,6 +69,7 @@ private:
   QVector<QPair<int, int>> avgFilter(const briefInfo &left,
                                      const briefInfo &right,
                                      const QVector<QPair<int, int>> &similar);
+  Loss mLoss = Loss::L1;
 
   YUV::Recommendation mRecommendation = YUV::Recommendation::BT601;
   float mStandardDeviation = 2;

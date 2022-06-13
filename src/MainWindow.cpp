@@ -152,6 +152,10 @@ MainWindow::findSimilar(const QPair<fastInfo, briefInfo> &left,
     bothImage.save("similar.jpg");
   }
 
+  if (similar.isEmpty()) {
+    return similar;
+  }
+
   qDebug() << "RANSAC...";
   timer.start();
   QVector<QPair<int, int>> bestSimilar =
@@ -223,6 +227,14 @@ MainWindow::avgFilter(const briefInfo &left, const briefInfo &right,
   return filtered;
 }
 
+Loss MainWindow::getLoss() const { return mLoss; }
+
+void MainWindow::setLoss(Loss newLoss) {
+  if (mLoss == newLoss)
+    return;
+  mLoss = newLoss;
+}
+
 // -----------------------------------------------------------------------------
 
 float MainWindow::getStandardDeviation() const { return mStandardDeviation; }
@@ -277,6 +289,19 @@ void MainWindow::iterationChanged(double d) {
 void MainWindow::avgFiltherChanged(int state) {
   qDebug() << "avgFiltherChanged" << state;
   mAvgFilther = Qt::Checked == state;
+}
+
+void MainWindow::lossChanged(const QString &text) {
+  qDebug() << "lossChanged" << text;
+  if (text == "L1") {
+    qDebug() << "\tL1";
+    mLoss = Loss::L1;
+  } else if (text == "L2") {
+    qDebug() << "\tL2";
+    mLoss = Loss::L2;
+  } else {
+    qDebug() << "\tunknown";
+  }
 }
 
 // -----------------------------------------------------------------------------
@@ -335,6 +360,13 @@ void MainWindow::combine() {
 
   auto similar = findSimilar(left, right);
 
+  if (similar.isEmpty()) {
+    QMessageBox::warning(
+        this, "Not found similar features",
+        "Not found similar features, change parameters and try again");
+    return;
+  }
+
   if (mAvgFilther) {
     similar = avgFilter(left.second, right.second, similar);
 
@@ -363,21 +395,51 @@ void MainWindow::combine() {
       initialApproximation(left.first, right.first, left.second, right.second,
                            similar, rightToBothCoord);
 
-  mCombine = QImage(leftWidht + rightWidht - qAbs(initial.x()),
-                    qMax(leftHeight, rightHeight) + qAbs(initial.y()),
-                    QImage::Format_RGB888);
-  mCombine.fill(QColorConstants::Yellow);
-  QPainter painter(&mCombine);
-  painter.drawImage(0, qAbs(initial.y()), mLeft);
-  painter.drawImage(rightToBothCoord({0, 0}).x() + initial.x(),
-                    rightToBothCoord({0, 0}).y() + initial.y(), mRight);
+  {
+    mCombine = QImage(leftWidht + rightWidht + qAbs(initial.x()),
+                      qMax(leftHeight, rightHeight) + qAbs(initial.y()),
+                      QImage::Format_RGB888);
+    mCombine.fill(QColorConstants::Yellow);
+    QPainter painter(&mCombine);
+    painter.drawImage(0, qAbs(initial.y()), mLeft);
+    painter.drawImage(rightToBothCoord({0, 0}).x() + initial.x(),
+                      rightToBothCoord({0, 0}).y() + initial.y(), mRight);
 
-  if (mDebug) {
-    mCombine.save("initialApproximation.jpg");
+    if (mDebug) {
+      mCombine.save("initialApproximation.jpg");
+    }
+  }
+
+  const auto opt =
+      optimize(left.first, right.first, left.second, right.second, similar,
+               rightToBothCoord, {0, initial, {1, 1}}, mLoss);
+  qDebug() << initial;
+  qDebug() << opt.rotate << opt.translate << opt.scale;
+  {
+    mCombine = QImage(leftWidht + rightWidht + qAbs(initial.x()),
+                      qMax(leftHeight, rightHeight) + qAbs(initial.y()),
+                      QImage::Format_RGB888);
+    mCombine.fill(QColorConstants::Yellow);
+    QPainter painter(&mCombine);
+    painter.drawImage(0, qAbs(initial.y()), mLeft);
+
+    QTransform transform;
+    transform.scale(opt.scale.x(), opt.scale.y());
+    transform.rotate(opt.rotate);
+    transform.translate(opt.translate.x(), opt.translate.y());
+    painter.setTransform(transform);
+
+    painter.drawImage(rightToBothCoord({0, 0}).x(),
+                      rightToBothCoord({0, 0}).y(), mRight);
+
+    if (mDebug) {
+      mCombine.save("optimize.jpg");
+    }
   }
 
   mCombineImg->setPixmap(QPixmap::fromImage(mCombine));
 
+  mCombineWidget->update();
   mCombineWidget->show();
 }
 
@@ -603,6 +665,21 @@ void MainWindow::createLayout() {
         avgHBox->addWidget(avgBox);
       }
       buttons->addLayout(avgHBox);
+
+      auto lossHBox = new QHBoxLayout;
+      {
+        auto loss = new QComboBox;
+        {
+          loss->addItem("L1");
+          loss->addItem("L2");
+          loss->setCurrentIndex((int)mLoss);
+          connect(loss, &QComboBox::currentTextChanged, this,
+                  &MainWindow::lossChanged);
+        }
+        lossHBox->addWidget(new QLabel("loss:"));
+        lossHBox->addWidget(loss);
+      }
+      buttons->addLayout(lossHBox);
     }
     main->addLayout(buttons, 0);
   }

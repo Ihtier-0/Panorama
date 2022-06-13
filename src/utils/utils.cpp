@@ -95,7 +95,7 @@ namespace YUV {
 
 float getBrightness(const QColor &aColor,
                     const Recommendation &aRecommendation) {
-  float KR, KB, KG;
+  float KR = 0, KB = 0, KG = 0;
   switch (aRecommendation) {
   case Recommendation::BT601: {
     KR = 0.299;
