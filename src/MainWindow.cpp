@@ -158,8 +158,9 @@ MainWindow::findSimilar(const QPair<fastInfo, briefInfo> &left,
 
   qDebug() << "RANSAC...";
   timer.start();
+  int count = similar.size() * (mResultCount / 100.0f);
   QVector<QPair<int, int>> bestSimilar =
-      RANSAC(similar, left.second, right.second, mResultCount, mIteration);
+      RANSAC(similar, left.second, right.second, count ? count : 1, mIteration);
   qDebug() << "DONE!" << timer.elapsed() << "ms";
 
   if (mDebug) {
@@ -357,6 +358,13 @@ void MainWindow::combine() {
   const auto rightToBothCoord = [leftWidht](const QPoint &point) -> QPoint {
     return {point.x() + leftWidht, point.y()};
   };
+
+  if (left.first.isEmpty() || right.first.isEmpty()) {
+    QMessageBox::warning(
+        this, "Not found features",
+        "Not found similar features, change parameters and try again");
+    return;
+  }
 
   auto similar = findSimilar(left, right);
 
@@ -622,6 +630,7 @@ void MainWindow::createLayout() {
           resultCountSpin->setDecimals(0);
           resultCountSpin->setSingleStep(1);
           resultCountSpin->setMinimum(1);
+          resultCountSpin->setMaximum(100);
           resultCountSpin->setValue(mResultCount);
           resultCountSpin->setMaximum(std::numeric_limits<double>::max());
           connect(resultCountSpin, &QDoubleSpinBox::valueChanged, this,
